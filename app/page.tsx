@@ -1,7 +1,7 @@
 'use client';
 
 import LZString from 'lz-string';
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { LANGS, THEMES } from './lib/themes';
 
 const SAMPLE = `function greet(name: string) {
@@ -118,7 +118,9 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
       <legend style={{ color: C.accent, fontSize: 12, padding: 0, marginBottom: 8 }}>
         <span style={{ color: C.dim }}>❯</span> {title}
       </legend>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>{children}</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}>
+        {children}
+      </div>
     </fieldset>
   );
 }
@@ -126,7 +128,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 function Row({ label, children, full }: { label: string; children: ReactNode; full?: boolean }) {
   return (
     <label style={{ display: 'block', gridColumn: full ? '1 / -1' : undefined }}>
-      <span style={{ display: 'block', color: C.dim, fontSize: 11, marginBottom: 3 }}>{label}</span>
+      <span style={{ display: 'block', color: C.dim, fontSize: 12, marginBottom: 3 }}>{label}</span>
       {children}
     </label>
   );
@@ -161,7 +163,10 @@ export default function Home() {
       max={max}
       style={fieldStyle}
       value={Number(s[key])}
-      onChange={(e) => set(key, Math.min(max, Math.max(min, Number(e.target.value) || 0)) as never)}
+      // Cap the max while typing but defer the min clamp to blur, so you can
+      // backspace/replace a value without it snapping to the minimum mid-edit.
+      onChange={(e) => set(key, Math.min(max, Number(e.target.value) || 0) as never)}
+      onBlur={(e) => set(key, Math.min(max, Math.max(min, Number(e.target.value) || min)) as never)}
     />
   );
   const Toggle = (key: keyof State, text: string) => (
@@ -217,35 +222,76 @@ export default function Home() {
   const [preview, setPreview] = useState(url);
   const [origin, setOrigin] = useState('');
   const [copied, setCopied] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState(false);
+  const [note, setNote] = useState('');
   const [previewError, setPreviewError] = useState(false);
+  const mdRef = useRef<HTMLTextAreaElement>(null);
+  const urlRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     const t = setTimeout(() => setPreview(url), 450);
     return () => clearTimeout(t);
   }, [url]);
   useEffect(() => setOrigin(window.location.origin), []);
   useEffect(() => setPreviewError(false), [preview]);
+  // Keep the sample in sync with the mode: if the textarea still holds the other
+  // mode's sample (i.e. the user hasn't typed their own code), swap it so the
+  // preview never renders a JS sample as a terminal session or vice-versa.
+  useEffect(() => {
+    setS((prev) =>
+      prev.mode === 'terminal' && prev.code === SAMPLE
+        ? { ...prev, code: TERM_SAMPLE, lang: 'bash' }
+        : prev.mode === 'code' && prev.code === TERM_SAMPLE
+          ? { ...prev, code: SAMPLE, lang: 'typescript' }
+          : prev,
+    );
+  }, [s.mode]);
 
-  const markdown = `![code](${origin}${preview})`;
+  const fullUrl = `${origin}${preview}`;
+  const markdown = `![code](${fullUrl})`;
 
-  const copy = () => {
-    navigator.clipboard?.writeText(markdown);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+  const flashNote = (msg: string) => {
+    setNote(msg);
+    setTimeout(() => setNote(''), 2500);
   };
+  const copyText = async (text: string, mark: () => void, el: HTMLTextAreaElement | null) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      mark();
+    } catch {
+      el?.focus();
+      el?.select();
+      flashNote('couldn’t copy automatically — selected, press ⌘/Ctrl+C');
+    }
+  };
+  const copy = () =>
+    copyText(markdown, () => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }, mdRef.current);
+  const copyUrl = () =>
+    copyText(fullUrl, () => {
+      setCopiedUrl(true);
+      setTimeout(() => setCopiedUrl(false), 1500);
+    }, urlRef.current);
   const download = async () => {
     try {
       const res = await fetch(preview);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
+      // On a render error the API replies 200 with an SVG fallback body; for a
+      // GIF request that mismatch means the render failed — don't save it.
+      if (s.format === 'gif' && !blob.type.includes('gif')) throw new Error('render failed');
       const objectUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = objectUrl;
-      a.download = `codemo.${s.format}`;
+      const safeTitle = s.title.trim().replace(/[^\w.-]+/g, '_').replace(/^_+|_+$/g, '');
+      a.download = `${safeTitle || 'codemo'}.${s.format}`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(objectUrl);
     } catch {
-      /* ignore download errors */
+      flashNote('download failed — try again');
     }
   };
 
@@ -286,11 +332,31 @@ export default function Home() {
           <span style={{ marginLeft: 10, color: C.dim, fontSize: 13 }}>
             codemo <span style={{ color: C.accent }}>~</span> playground
           </span>
+          <a
+            href="https://github.com/masaki39/codemo"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="View codemo source on GitHub"
+            style={{
+              marginLeft: 'auto',
+              color: C.dim,
+              fontSize: 13,
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
+            </svg>
+            GitHub
+          </a>
         </div>
 
         <div style={{ padding: 20, display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'flex-start' }}>
           {/* controls */}
-          <div style={{ flex: '1 1 380px', minWidth: 320 }}>
+          <div style={{ flex: '1 1 380px', minWidth: 0 }}>
             <p style={{ marginTop: 0, color: C.dim, fontSize: 13 }}>
               <span style={{ color: C.accent }}>$</span> render code blocks as SVG &amp; animated GIF
             </p>
@@ -305,12 +371,10 @@ export default function Home() {
             </Row>
             <div style={{ display: 'flex', gap: 14, margin: '10px 0 18px' }}>
               <button
-                onClick={() =>
-                  set('code', s.mode === 'terminal' ? TERM_SAMPLE : SAMPLE)
-                }
-                style={{ ...fieldStyle, width: 'auto', cursor: 'pointer', color: C.dim }}
+                onClick={() => set('code', s.mode === 'terminal' ? TERM_SAMPLE : SAMPLE)}
+                style={{ ...btnStyle(C.border), color: C.dim }}
               >
-                load sample
+                load {s.mode} sample
               </button>
             </div>
 
@@ -358,9 +422,10 @@ export default function Home() {
 
           {/* preview */}
           <div
+            className="preview-col"
             style={{
               flex: '1 1 360px',
-              minWidth: 320,
+              minWidth: 0,
               position: 'sticky',
               top: 20,
               maxHeight: 'calc(100vh - 40px)',
@@ -397,22 +462,74 @@ export default function Home() {
 
             <div style={{ color: C.dim, fontSize: 11, margin: '14px 0 6px' }}>markdown</div>
             <textarea
+              ref={mdRef}
               readOnly
               value={markdown}
               onFocus={(e) => e.currentTarget.select()}
-              style={{ ...fieldStyle, height: 64, fontSize: 12, lineHeight: 1.5 }}
+              style={{ ...fieldStyle, height: 52, fontSize: 12, lineHeight: 1.5 }}
             />
-            <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+            <div style={{ color: C.dim, fontSize: 11, margin: '10px 0 6px' }}>
+              image url <span style={{ opacity: 0.7 }}>— for HTML, Marp, reveal.js…</span>
+            </div>
+            <textarea
+              ref={urlRef}
+              readOnly
+              value={fullUrl}
+              onFocus={(e) => e.currentTarget.select()}
+              style={{ ...fieldStyle, height: 52, fontSize: 12, lineHeight: 1.5 }}
+            />
+            <div style={{ display: 'flex', gap: 10, marginTop: 8, flexWrap: 'wrap', alignItems: 'center' }}>
               <button onClick={copy} style={btnStyle(C.accent)}>
                 {copied ? 'copied!' : 'copy markdown'}
               </button>
-              <button onClick={download} style={btnStyle(C.cyan)}>
+              <button onClick={copyUrl} style={btnStyle(C.cyan)}>
+                {copiedUrl ? 'copied!' : 'copy url'}
+              </button>
+              <button onClick={download} style={btnStyle(C.dim)}>
                 download {s.format}
               </button>
             </div>
+            {note && (
+              <div role="status" style={{ color: '#f0b72f', fontSize: 12, marginTop: 8 }}>
+                {note}
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      <footer
+        style={{
+          maxWidth: 1080,
+          margin: '16px auto 0',
+          display: 'flex',
+          gap: 16,
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          alignItems: 'center',
+          color: C.dim,
+          fontSize: 12,
+        }}
+      >
+        <a href="https://github.com/masaki39/codemo" target="_blank" rel="noopener noreferrer" style={{ color: C.dim }}>
+          GitHub
+        </a>
+        <span style={{ opacity: 0.4 }}>·</span>
+        <a href="https://github.com/masaki39/codemo#parameters" target="_blank" rel="noopener noreferrer" style={{ color: C.dim }}>
+          docs
+        </a>
+        <span style={{ opacity: 0.4 }}>·</span>
+        <a href="https://github.com/masaki39/codemo#license" target="_blank" rel="noopener noreferrer" style={{ color: C.dim }}>
+          MIT License
+        </a>
+        <span style={{ opacity: 0.4 }}>·</span>
+        <span>
+          made by{' '}
+          <a href="https://github.com/masaki39" target="_blank" rel="noopener noreferrer" style={{ color: C.dim }}>
+            masaki39
+          </a>
+        </span>
+      </footer>
     </main>
   );
 }

@@ -128,8 +128,10 @@ export function buildFrames(hl: Highlighted, cfg: CodeConfig): Frame[] {
     const prev = lines.slice(0, r);
     if (commands.has(r)) {
       const cols = lineCols(lines[r]);
+      // The prompt (first token) is shown instantly; only the command types out.
+      const promptCols = lines[r].length > 0 ? strCols(lines[r][0].content) : 0;
       const step = Math.max(baseStep, Math.ceil(cols / CMD_FRAME_CAP));
-      for (let c = 0; c < cols; c += step) {
+      for (let c = Math.min(promptCols, cols); c < cols; c += step) {
         const sliced = sliceLine(lines[r], c);
         frames.push({
           lines: [...prev, sliced],

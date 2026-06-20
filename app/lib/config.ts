@@ -7,6 +7,10 @@ export const LIMITS = {
   maxCodeLength: 20000,
   maxLines: 200,
   maxCols: 400,
+  // Ceiling on a single rasterized canvas (width*height). The per-axis limits
+  // can otherwise multiply (e.g. fontSize 40 * 400 cols * 200 lines) into a
+  // ~100M-pixel / hundreds-of-MB buffer that OOMs/timeouts the function.
+  maxCanvasPixels: 40_000_000,
 } as const;
 
 function num(value: string | null, fallback: number, min: number, max: number): number {

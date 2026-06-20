@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   title: 'codemo',
   description: DESCRIPTION,
   keywords: ['code', 'syntax highlighting', 'svg', 'gif', 'markdown', 'slides', 'shiki'],
+  alternates: { canonical: '/' },
+  authors: [{ name: 'masaki39', url: 'https://github.com/masaki39' }],
+  creator: 'masaki39',
   openGraph: {
     title: 'codemo',
     description: DESCRIPTION,

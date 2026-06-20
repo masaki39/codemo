@@ -6,6 +6,29 @@ html,
 body {
   margin: 0;
   background: #0b0e14;
+  /* Render native form controls (checkboxes, number spinners, scrollbars) dark
+     so they don't flash light chrome on the dark UI. */
+  color-scheme: dark;
+}
+
+input,
+select,
+textarea {
+  accent-color: #3fb950;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* On narrow screens the preview wraps below the controls; drop the sticky
+   pinning and viewport-height cap so it scrolls naturally with the page. */
+@media (max-width: 800px) {
+  .preview-col {
+    position: static !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
 }
 
 button {

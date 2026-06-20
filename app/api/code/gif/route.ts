@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { parseConfig } from '../../../lib/config';
+import { LIMITS, parseConfig } from '../../../lib/config';
 import { buildFrames, type Frame } from '../../../lib/gif/frames';
 import { encodeGif } from '../../../lib/gif/encode';
 import { rasterize } from '../../../lib/gif/rasterize';
@@ -21,14 +21,25 @@ const PLACEHOLDER =
 // canvas can't multiply by the frame count into a timeout / OOM on Vercel.
 const MAX_TOTAL_PIXELS = 80_000_000;
 
-/** Evenly downsample frames to fit the pixel budget, always keeping the last. */
+/**
+ * Evenly downsample frames to fit the pixel budget, always keeping the last.
+ * Each kept frame absorbs the `delayMs` of the frames it replaces so the overall
+ * animation duration is preserved instead of playing back faster.
+ */
 function budgetFrames(frames: Frame[], perFramePixels: number): Frame[] {
   const maxFrames = Math.max(1, Math.floor(MAX_TOTAL_PIXELS / Math.max(perFramePixels, 1)));
   if (frames.length <= maxFrames) return frames;
   const out: Frame[] = [];
   const stride = frames.length / maxFrames;
-  for (let i = 0; i < maxFrames; i++) out.push(frames[Math.floor(i * stride)]);
-  out[out.length - 1] = frames[frames.length - 1];
+  for (let i = 0; i < maxFrames; i++) {
+    const idx = Math.floor(i * stride);
+    const nextIdx = i === maxFrames - 1 ? frames.length : Math.floor((i + 1) * stride);
+    let delayMs = 0;
+    for (let j = idx; j < nextIdx; j++) delayMs += frames[j].delayMs;
+    // Keep the final frame's content at the tail so the end state is shown.
+    const source = i === maxFrames - 1 ? frames[frames.length - 1] : frames[idx];
+    out.push({ ...source, delayMs });
+  }
   return out;
 }
 
@@ -43,6 +54,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         ? await terminalize(code, cfg.theme, cfg.prompt, cfg.lang, cfg.cmdHighlight)
         : await highlight(code, lang, cfg.theme);
     const geo = computeGeometry(hl.lines, cfg);
+    if (geo.width * geo.height > LIMITS.maxCanvasPixels) {
+      return new NextResponse(errorSvg('image too large'), {
+        status: 200,
+        headers: { 'Content-Type': 'image/svg+xml; charset=utf-8', 'Cache-Control': 'no-store' },
+      });
+    }
     const frames = budgetFrames(buildFrames(hl, cfg), geo.width * geo.height);
 
     const raster = frames.map((frame) => {

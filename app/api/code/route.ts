@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { parseConfig } from '../../lib/config';
+import { LIMITS, parseConfig } from '../../lib/config';
 import { highlight } from '../../lib/highlight';
-import { errorSvg, renderSvg } from '../../lib/svg/render';
+import { computeGeometry } from '../../lib/svg/geometry';
+import { errorSvg, renderFrame } from '../../lib/svg/render';
 import { terminalize } from '../../lib/terminal';
 
 export const runtime = 'nodejs';
@@ -22,7 +23,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       cfg.mode === 'terminal'
         ? await terminalize(code, cfg.theme, cfg.prompt, cfg.lang, cfg.cmdHighlight)
         : await highlight(code, lang, cfg.theme);
-    const svg = renderSvg(hl, cfg);
+    const geo = computeGeometry(hl.lines, cfg);
+    if (geo.width * geo.height > LIMITS.maxCanvasPixels) {
+      return new NextResponse(errorSvg('image too large'), {
+        status: 200,
+        headers: { 'Content-Type': 'image/svg+xml; charset=utf-8', 'Cache-Control': 'no-store' },
+      });
+    }
+    const svg = renderFrame(hl.lines, hl, cfg, geo, { embedFont: true });
 
     return new NextResponse(svg, {
       headers: {
