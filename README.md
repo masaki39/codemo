@@ -8,25 +8,25 @@ Powered by [Shiki](https://shiki.style) (VS Code grammars & themes), rendered to
 
 Static code block (SVG):
 
-![demo](https://codemo.vercel.app/api/code?code=const%20greet%20%3D%20(name)%20%3D%3E%20%60Hello%2C%20%24%7Bname%7D!%60%3B&lang=javascript&theme=dracula&title=greet.js)
+![demo](https://codemo-lake.vercel.app/api/code?code=const%20greet%20%3D%20(name)%20%3D%3E%20%60Hello%2C%20%24%7Bname%7D!%60%3B&lang=javascript&theme=dracula&title=greet.js)
 
 Typing animation (GIF):
 
-![typing](https://codemo.vercel.app/api/code/gif?code=const%20greet%20%3D%20(name)%20%3D%3E%20%60Hello%2C%20%24%7Bname%7D!%60%3B&lang=javascript&theme=dracula&anim=typing&title=greet.js)
+![typing](https://codemo-lake.vercel.app/api/code/gif?code=const%20greet%20%3D%20(name)%20%3D%3E%20%60Hello%2C%20%24%7Bname%7D!%60%3B&lang=javascript&theme=dracula&anim=typing&title=greet.js)
 
 Terminal session (GIF):
 
-![terminal](https://codemo.vercel.app/api/code/gif?code=%24%20npm%20install%20codemo%0Aadded%201%20package%20in%200.4s&mode=terminal&anim=terminal&theme=tokyo-night&title=zsh)
+![terminal](https://codemo-lake.vercel.app/api/code/gif?code=%24%20npm%20install%20codemo%0Aadded%201%20package%20in%200.4s&mode=terminal&anim=terminal&theme=tokyo-night&title=zsh)
 
-> Try it interactively in the **[playground](https://codemo.vercel.app)**.
+> Try it interactively in the **[playground](https://codemo-lake.vercel.app)**.
 
 ## Usage
 
 Embed in Markdown:
 
 ```markdown
-![code](https://codemo.vercel.app/api/code?code=const%20x%20%3D%201&lang=ts&theme=dracula)
-![code](https://codemo.vercel.app/api/code/gif?code=const%20x%20%3D%201&lang=ts&anim=typing)
+![code](https://codemo-lake.vercel.app/api/code?code=const%20x%20%3D%201&lang=ts&theme=dracula)
+![code](https://codemo-lake.vercel.app/api/code/gif?code=const%20x%20%3D%201&lang=ts&anim=typing)
 ```
 
 Endpoints:
@@ -45,7 +45,7 @@ URLs have length limits and code contains characters that need escaping. For any
 ```js
 import LZString from 'lz-string';
 const lz = LZString.compressToEncodedURIComponent(sourceCode);
-const url = `https://codemo.vercel.app/api/code?lz=${lz}&lang=typescript&theme=nord`;
+const url = `https://codemo-lake.vercel.app/api/code?lz=${lz}&lang=typescript&theme=nord`;
 ```
 
 The playground does this for you and gives you a ready-to-paste Markdown snippet.
