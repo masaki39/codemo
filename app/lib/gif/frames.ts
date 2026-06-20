@@ -133,16 +133,18 @@ export function buildFrames(hl: Highlighted, cfg: CodeConfig): Frame[] {
           delayMs: frameMs,
         });
       }
+      // Hold the completed command, simulating the time it takes to run.
       frames.push({
         lines: lines.slice(0, r + 1),
         cursor: cfg.cursor ? { row: r, col: cols } : null,
-        delayMs: frameMs,
+        delayMs: frameMs + cfg.execDelay,
       });
     } else {
+      // Output lines appear one at a time, paced so they're readable.
       frames.push({
         lines: lines.slice(0, r + 1),
         cursor: null,
-        delayMs: Math.max(120, frameMs),
+        delayMs: cfg.outputDelay,
       });
     }
   }

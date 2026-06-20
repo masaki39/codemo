@@ -38,6 +38,8 @@ Endpoints:
 
 > **Why GIF for animation?** GitHub renders embedded SVG via `<img>`, which does **not** play SVG/CSS animations. Use the GIF endpoint for anything that moves; use the SVG endpoint for static blocks.
 
+> **Transparency.** SVG corners are transparent. GIF supports only 1-bit (on/off) transparency, so the rounded corners are made transparent (slightly aliased edges) by default — set `transparent=0` plus a `bg` matching your page for perfectly smooth corners.
+
 ### Passing long code
 
 URLs have length limits and code contains characters that need escaping. For anything non-trivial, compress the code with [lz-string](https://github.com/pieroxy/lz-string) and pass it as `lz`:
@@ -62,30 +64,35 @@ The playground does this for you and gives you a ready-to-paste Markdown snippet
 | `anim` | `none`, `typing`, `step`, `terminal` (GIF only) | `typing` (gif) |
 | `title` | Window title / filename label | — |
 | `window` | Show the macOS-style window chrome (`0`/`1`) | `1` |
+| `showLang` | Show the language label in the title bar (`0`/`1`) | `0` |
 | `lineNumbers` | Show line numbers (`0`/`1`) | `0` |
 | `padding` | Inner padding in px | `24` |
 | `fontSize` | Font size in px | `14` |
 | `radius` | Corner radius in px | `10` |
 | `bg` | Background color override (any CSS color) | theme bg |
+| `transparent` | GIF: keep the rounded corners transparent (`0`/`1`) | `1` |
 | `tabSize` | Spaces per tab | `2` |
 | `prompt` | Terminal prompt prefix that marks command lines | `$ ` |
+| `cmdHighlight` | Terminal: syntax-highlight command lines (`0`/`1`) | `1` |
 | `speed` | Typing speed (characters per second) | `14` |
 | `fps` | Frames per second | `12` |
 | `loop` | Loop the GIF forever (`0`/`1`) | `1` |
 | `cursor` | Show the typing cursor (`0`/`1`) | `1` |
 | `startDelay` | Hold the first frame, in ms | `400` |
 | `endDelay` | Hold the last frame, in ms | `1500` |
+| `execDelay` | Terminal: pause after a command before its output, in ms | `300` |
+| `outputDelay` | Terminal: hold per output line, in ms | `250` |
 
 ## Modes
 
 - **`code`** — syntax-highlighted source with Shiki.
-- **`terminal`** — renders text as a shell session. Lines starting with the `prompt` (default `$ `) are drawn as commands (green prompt); all other lines are output.
+- **`terminal`** — renders text as a shell session. Lines starting with the `prompt` (default `$ `) are drawn as commands (green prompt) and syntax-highlighted (bash by default — pick another grammar with `lang`); all other lines are output. Disable command highlighting with `cmdHighlight=0`.
 
 ## Animations (GIF)
 
 - **`typing`** — characters are typed out left to right with a blinking-style block cursor.
 - **`step`** — lines are revealed one by one. Great for building up an idea on a slide.
-- **`terminal`** — command lines type out, then their output appears instantly (pairs with `mode=terminal`).
+- **`terminal`** — command lines type out, then their output appears line by line, paced by `execDelay` (pause after the command) and `outputDelay` (per output line). Pairs with `mode=terminal`.
 
 ## Themes
 
@@ -93,7 +100,7 @@ The playground does this for you and gives you a ready-to-paste Markdown snippet
 
 ## Languages
 
-`javascript` (`js`), `typescript` (`ts`), `tsx`, `jsx`, `json`, `python` (`py`), `rust`, `go`, `bash` (`sh`/`shell`/`zsh`), `html`, `css`, `markdown`, `yaml` (`yml`), `sql`, `c`, `cpp` (`c++`), `java`, `ruby` (`rb`), `php`, `diff`, `text` (plain)
+`javascript` (`js`), `typescript` (`ts`), `tsx`, `jsx`, `json`, `python` (`py`), `rust`, `go`, `bash` (`sh`/`shell`/`zsh`/`console`), `powershell` (`ps`/`ps1`), `docker` (`dockerfile`), `html`, `css`, `markdown`, `yaml` (`yml`), `toml`, `ini`, `xml`, `sql`, `graphql`, `c`, `cpp` (`c++`), `csharp` (`cs`/`c#`), `java`, `kotlin` (`kt`), `swift`, `scala`, `ruby` (`rb`), `php`, `lua`, `dart`, `r`, `elixir`, `vue`, `svelte`, `diff`, `text` (plain)
 
 ## Self-hosting on Vercel
 

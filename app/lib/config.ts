@@ -38,12 +38,15 @@ export function parseConfig(params: URLSearchParams, format: Format): CodeConfig
   code = code.replace(/\r\n?/g, '\n').replace(/\t/g, ' '.repeat(tabSize));
 
   const defaultAnim: Anim = format === 'gif' ? 'typing' : 'none';
+  const mode = oneOf(params.get('mode'), MODES, 'code');
+  // Terminal commands default to bash highlighting when no language is given.
+  const langDefault = mode === 'terminal' ? 'bash' : '';
 
   return {
     code,
-    lang: resolveLang(params.get('lang') ?? ''),
+    lang: resolveLang(params.get('lang') ?? langDefault),
     theme: resolveTheme(params.get('theme') ?? ''),
-    mode: oneOf(params.get('mode'), MODES, 'code'),
+    mode,
     anim: format === 'svg' ? 'none' : oneOf(params.get('anim'), ANIMS, defaultAnim),
     format,
 
@@ -52,8 +55,10 @@ export function parseConfig(params: URLSearchParams, format: Format): CodeConfig
     lineNumbers: bool(params.get('lineNumbers'), false),
     window: bool(params.get('window'), true),
     title: (params.get('title') ?? '').slice(0, 120),
+    showLang: bool(params.get('showLang'), false),
     radius: num(params.get('radius'), 10, 0, 40),
     bg: params.get('bg'),
+    transparent: bool(params.get('transparent'), true),
     tabSize,
 
     speed: num(params.get('speed'), 14, 1, 100),
@@ -64,5 +69,8 @@ export function parseConfig(params: URLSearchParams, format: Format): CodeConfig
     endDelay: num(params.get('endDelay'), 1500, 0, 10000),
 
     prompt: (params.get('prompt') ?? '$ ').slice(0, 16),
+    cmdHighlight: bool(params.get('cmdHighlight'), true),
+    execDelay: num(params.get('execDelay'), 300, 0, 5000),
+    outputDelay: num(params.get('outputDelay'), 250, 0, 5000),
   };
 }

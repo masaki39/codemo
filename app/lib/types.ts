@@ -34,8 +34,10 @@ export interface CodeConfig {
   lineNumbers: boolean;
   window: boolean;
   title: string;
+  showLang: boolean; // show the language label in the title bar
   radius: number;
   bg: string | null;
+  transparent: boolean; // GIF: transparent corners (false = opaque backdrop)
   tabSize: number;
 
   // animation (GIF)
@@ -48,4 +50,7 @@ export interface CodeConfig {
 
   // terminal
   prompt: string;
+  cmdHighlight: boolean; // syntax-highlight command lines
+  execDelay: number; // ms pause after a command before its output appears
+  outputDelay: number; // ms held per output line
 }

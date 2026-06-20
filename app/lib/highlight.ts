@@ -78,6 +78,13 @@ export async function highlight(code: string, lang: string, theme: string): Prom
   return { lines, fg, bg };
 }
 
+/** Tokenize a single line of text (used by terminal mode to highlight commands). */
+export async function tokenizeLine(text: string, lang: string, theme: string): Promise<Tok[]> {
+  if (!text) return [];
+  const result = await highlight(text, lang, theme);
+  return result.lines[0] ?? [];
+}
+
 /** Resolve a theme's base foreground / background colors (used by terminal mode). */
 export async function getThemeColors(theme: string): Promise<{ fg: string; bg: string }> {
   const highlighter = await getHighlighter();

@@ -23,7 +23,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   const hl =
     cfg.mode === 'terminal'
-      ? await terminalize(code, cfg.theme, cfg.prompt)
+      ? await terminalize(code, cfg.theme, cfg.prompt, cfg.lang, cfg.cmdHighlight)
       : await highlight(code, lang, cfg.theme);
   const geo = computeGeometry(hl.lines, cfg);
   const frames = buildFrames(hl, cfg);

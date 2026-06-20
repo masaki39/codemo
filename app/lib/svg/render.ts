@@ -65,7 +65,14 @@ function renderTitleBar(geo: Geometry, cfg: CodeConfig, fg: string): string {
       `font-family="${FONT_STACK}" font-size="${Math.round(cfg.fontSize * 0.85)}px" ` +
       `dominant-baseline="central">${escapeXml(cfg.title)}</text>`;
   }
-  return dots + title;
+  let langLabel = '';
+  if (cfg.showLang && cfg.lang) {
+    langLabel =
+      `<text x="${geo.width - geo.padX}" y="${cy}" text-anchor="end" fill="${fg}" fill-opacity="0.45" ` +
+      `font-family="${FONT_STACK}" font-size="${Math.round(cfg.fontSize * 0.8)}px" ` +
+      `dominant-baseline="central">${escapeXml(cfg.lang)}</text>`;
+  }
+  return dots + title + langLabel;
 }
 
 function renderCursor(
@@ -96,6 +103,12 @@ export function renderFrame(
     ? `<defs><style>${fontStyleBlock(cfg.fontSize)}</style></defs>`
     : '';
 
+  // When transparency is disabled, fill the whole canvas (incl. the rounded
+  // corners) with an opaque backdrop so the GIF has no transparent pixels.
+  const backdrop = !cfg.transparent
+    ? `<rect x="0" y="0" width="${width}" height="${height}" fill="${bg}"/>`
+    : '';
+
   const body = lines
     .map((line, i) =>
       renderLine(line, geo.contentTop + i * geo.lineHeight + geo.lineHeight / 2, geo.contentX, cfg.fontSize),
@@ -109,6 +122,7 @@ export function renderFrame(
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="code">` +
     defs +
+    backdrop +
     `<rect x="0" y="0" width="${width}" height="${height}" rx="${cfg.radius}" fill="${bg}" stroke="rgba(127,127,127,0.18)" stroke-width="1"/>` +
     bar +
     gutter +
