@@ -10,6 +10,7 @@ import { errorSvg, renderFrame } from '../../../lib/svg/render';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
+export const dynamic = 'force-dynamic';
 
 const PLACEHOLDER =
   '// codemo\n' +

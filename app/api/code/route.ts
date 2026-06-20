@@ -5,6 +5,7 @@ import { errorSvg, renderSvg } from '../../lib/svg/render';
 import { terminalize } from '../../lib/terminal';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 const PLACEHOLDER =
   '// codemo\n' +
