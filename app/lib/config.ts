@@ -25,6 +25,21 @@ function oneOf<T extends string>(value: string | null, allowed: readonly T[], fa
   return value != null && (allowed as readonly string[]).includes(value) ? (value as T) : fallback;
 }
 
+/**
+ * Accept only safe CSS color syntaxes for the `bg` param so it can't break out
+ * of the SVG attribute it's interpolated into. Covers hex, rgb/rgba/hsl/hsla,
+ * and bare named colors (letters only — no quotes/brackets/spaces).
+ */
+function color(value: string | null): string | null {
+  if (value == null) return null;
+  const v = value.trim();
+  const ok =
+    /^#[0-9a-fA-F]{3,8}$/.test(v) ||
+    /^(rgb|rgba|hsl|hsla)\([\d.,%\s/]+\)$/i.test(v) ||
+    /^[a-zA-Z]{3,20}$/.test(v);
+  return ok ? v : null;
+}
+
 const MODES: readonly Mode[] = ['code', 'terminal'];
 const ANIMS: readonly Anim[] = ['none', 'typing', 'step', 'terminal'];
 
@@ -57,7 +72,7 @@ export function parseConfig(params: URLSearchParams, format: Format): CodeConfig
     title: (params.get('title') ?? '').slice(0, 120),
     showLang: bool(params.get('showLang'), false),
     radius: num(params.get('radius'), 10, 0, 40),
-    bg: params.get('bg'),
+    bg: color(params.get('bg')),
     transparent: bool(params.get('transparent'), true),
     tabSize,
 

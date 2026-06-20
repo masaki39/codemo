@@ -102,14 +102,25 @@ The playground does this for you and gives you a ready-to-paste Markdown snippet
 
 `javascript` (`js`), `typescript` (`ts`), `tsx`, `jsx`, `json`, `python` (`py`), `rust`, `go`, `bash` (`sh`/`shell`/`zsh`/`console`), `powershell` (`ps`/`ps1`), `docker` (`dockerfile`), `html`, `css`, `markdown`, `yaml` (`yml`), `toml`, `ini`, `xml`, `sql`, `graphql`, `c`, `cpp` (`c++`), `csharp` (`cs`/`c#`), `java`, `kotlin` (`kt`), `swift`, `scala`, `ruby` (`rb`), `php`, `lua`, `dart`, `r`, `elixir`, `vue`, `svelte`, `diff`, `text` (plain)
 
-## Self-hosting on Vercel
+## Develop locally
 
 ```sh
 git clone https://github.com/masaki39/codemo.git
 cd codemo
 pnpm install
-vercel deploy
+pnpm dev        # http://localhost:3000 (playground + API)
 ```
+
+## Self-hosting on Vercel
+
+Deploy your own copy with the [Vercel CLI](https://vercel.com/docs/cli):
+
+```sh
+pnpm install -g vercel   # or: npx vercel
+vercel deploy --prod
+```
+
+When self-hosting, replace `codemo-lake.vercel.app` in the examples with your own deployment URL. The playground builds embed URLs from `window.location.origin`, so it works on any domain automatically.
 
 ## License
 

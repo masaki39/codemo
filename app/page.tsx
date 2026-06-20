@@ -84,7 +84,7 @@ const C = {
   bar: '#161b22',
   border: '#222b35',
   text: '#c9d1d9',
-  dim: '#7d8590',
+  dim: '#9aa5b2',
   accent: '#3fb950',
   cyan: '#39c5cf',
 };
@@ -100,6 +100,17 @@ const fieldStyle: CSSProperties = {
   width: '100%',
   boxSizing: 'border-box',
 };
+
+const btnStyle = (color: string): CSSProperties => ({
+  padding: '8px 16px',
+  borderRadius: 6,
+  border: `1px solid ${color}`,
+  background: 'transparent',
+  color,
+  cursor: 'pointer',
+  fontFamily: 'inherit',
+  fontSize: 13,
+});
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -143,12 +154,14 @@ export default function Home() {
       onChange={(e) => set(key, e.target.value as never)}
     />
   );
-  const Num = (key: keyof State) => (
+  const Num = (key: keyof State, min: number, max: number) => (
     <input
       type="number"
+      min={min}
+      max={max}
       style={fieldStyle}
       value={Number(s[key])}
-      onChange={(e) => set(key, (Number(e.target.value) || 0) as never)}
+      onChange={(e) => set(key, Math.min(max, Math.max(min, Number(e.target.value) || 0)) as never)}
     />
   );
   const Toggle = (key: keyof State, text: string) => (
@@ -203,13 +216,38 @@ export default function Home() {
 
   const [preview, setPreview] = useState(url);
   const [origin, setOrigin] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [previewError, setPreviewError] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setPreview(url), 450);
     return () => clearTimeout(t);
   }, [url]);
   useEffect(() => setOrigin(window.location.origin), []);
+  useEffect(() => setPreviewError(false), [preview]);
 
   const markdown = `![code](${origin}${preview})`;
+
+  const copy = () => {
+    navigator.clipboard?.writeText(markdown);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+  const download = async () => {
+    try {
+      const res = await fetch(preview);
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = objectUrl;
+      a.download = `codemo.${s.format}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch {
+      /* ignore download errors */
+    }
+  };
 
   return (
     <main
@@ -287,39 +325,48 @@ export default function Home() {
             <Section title="appearance">
               <Row label="title">{Text('title', 'greet.ts')}</Row>
               <Row label="background (bg)">{Text('bg', 'theme default')}</Row>
-              <Row label="padding">{Num('padding')}</Row>
-              <Row label="fontSize">{Num('fontSize')}</Row>
-              <Row label="radius">{Num('radius')}</Row>
-              <Row label="tabSize">{Num('tabSize')}</Row>
-              <Row label=" ">{Toggle('window', 'window chrome')}</Row>
-              <Row label=" ">{Toggle('showLang', 'show language')}</Row>
-              <Row label=" ">{Toggle('lineNumbers', 'line numbers')}</Row>
-              <Row label=" ">{Toggle('transparent', 'transparent (gif)')}</Row>
+              <Row label="padding">{Num('padding', 0, 200)}</Row>
+              <Row label="fontSize">{Num('fontSize', 8, 40)}</Row>
+              <Row label="radius">{Num('radius', 0, 40)}</Row>
+              <Row label="tabSize">{Num('tabSize', 1, 8)}</Row>
+              {Toggle('window', 'window chrome')}
+              {Toggle('showLang', 'show language')}
+              {Toggle('lineNumbers', 'line numbers')}
+              {Toggle('transparent', 'transparent (gif)')}
             </Section>
 
             {s.format === 'gif' && (
               <Section title="animation">
-                <Row label="speed (cps)">{Num('speed')}</Row>
-                <Row label="fps">{Num('fps')}</Row>
-                <Row label="startDelay (ms)">{Num('startDelay')}</Row>
-                <Row label="endDelay (ms)">{Num('endDelay')}</Row>
-                <Row label=" ">{Toggle('loop', 'loop')}</Row>
-                <Row label=" ">{Toggle('cursor', 'cursor')}</Row>
+                <Row label="speed (cps)">{Num('speed', 1, 100)}</Row>
+                <Row label="fps">{Num('fps', 1, 30)}</Row>
+                <Row label="startDelay (ms)">{Num('startDelay', 0, 5000)}</Row>
+                <Row label="endDelay (ms)">{Num('endDelay', 0, 10000)}</Row>
+                {Toggle('loop', 'loop')}
+                {Toggle('cursor', 'cursor')}
               </Section>
             )}
 
             {s.mode === 'terminal' && (
               <Section title="terminal">
                 <Row label="prompt">{Text('prompt', '$ ')}</Row>
-                <Row label=" ">{Toggle('cmdHighlight', 'highlight commands')}</Row>
-                {s.format === 'gif' && <Row label="execDelay (ms)">{Num('execDelay')}</Row>}
-                {s.format === 'gif' && <Row label="outputDelay (ms)">{Num('outputDelay')}</Row>}
+                {Toggle('cmdHighlight', 'highlight commands')}
+                {s.format === 'gif' && <Row label="execDelay (ms)">{Num('execDelay', 0, 5000)}</Row>}
+                {s.format === 'gif' && <Row label="outputDelay (ms)">{Num('outputDelay', 0, 5000)}</Row>}
               </Section>
             )}
           </div>
 
           {/* preview */}
-          <div style={{ flex: '1 1 360px', minWidth: 320, position: 'sticky', top: 20 }}>
+          <div
+            style={{
+              flex: '1 1 360px',
+              minWidth: 320,
+              position: 'sticky',
+              top: 20,
+              maxHeight: 'calc(100vh - 40px)',
+              overflowY: 'auto',
+            }}
+          >
             <div style={{ color: C.dim, fontSize: 11, marginBottom: 6 }}>preview</div>
             <div
               style={{
@@ -329,11 +376,23 @@ export default function Home() {
                 border: `1px solid ${C.border}`,
                 minHeight: 120,
                 display: 'flex',
+                alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={preview} alt="preview" style={{ maxWidth: '100%' }} />
+              {previewError ? (
+                <span style={{ color: '#f97583', fontSize: 13 }}>
+                  couldn&rsquo;t render — check your inputs
+                </span>
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={preview}
+                  alt="preview of the rendered code block"
+                  onError={() => setPreviewError(true)}
+                  style={{ maxWidth: '100%' }}
+                />
+              )}
             </div>
 
             <div style={{ color: C.dim, fontSize: 11, margin: '14px 0 6px' }}>markdown</div>
@@ -343,22 +402,14 @@ export default function Home() {
               onFocus={(e) => e.currentTarget.select()}
               style={{ ...fieldStyle, height: 64, fontSize: 12, lineHeight: 1.5 }}
             />
-            <button
-              onClick={() => navigator.clipboard?.writeText(markdown)}
-              style={{
-                marginTop: 8,
-                padding: '8px 16px',
-                borderRadius: 6,
-                border: `1px solid ${C.accent}`,
-                background: 'transparent',
-                color: C.accent,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                fontSize: 13,
-              }}
-            >
-              copy markdown
-            </button>
+            <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+              <button onClick={copy} style={btnStyle(C.accent)}>
+                {copied ? 'copied!' : 'copy markdown'}
+              </button>
+              <button onClick={download} style={btnStyle(C.cyan)}>
+                download {s.format}
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -32,14 +32,12 @@
     "gifenc": "^1.0.3",
     "lz-string": "^1.5.0",
     "next": "^14.2.0",
-    "pngjs": "^7.0.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "shiki": "^1.22.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "@types/pngjs": "^6.0.5",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
     "typescript": "^5.0.0"

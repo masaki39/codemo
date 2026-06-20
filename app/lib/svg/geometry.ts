@@ -46,7 +46,12 @@ export function computeGeometry(lines: Tok[][], cfg: CodeConfig): Geometry {
   const contentTop = barHeight + padY;
 
   const codeWidth = Math.ceil(cols * charWidth);
-  const width = Math.ceil(contentX + codeWidth + padX);
+  let width = Math.ceil(contentX + codeWidth + padX);
+  // Ensure narrow content still fits the title-bar traffic lights.
+  if (cfg.window) {
+    const r = Math.max(3, Math.round(fontSize * 0.28));
+    width = Math.max(width, padX * 2 + Math.ceil(r * 9));
+  }
   const height = Math.ceil(contentTop + rows * lineHeight + padY);
 
   return {

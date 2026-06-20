@@ -96,7 +96,7 @@ export function renderFrame(
   geo: Geometry,
   opts: FrameOptions,
 ): string {
-  const bg = cfg.bg || hl.bg;
+  const bg = escapeXml(cfg.bg || hl.bg);
   const { width, height } = geo;
 
   const defs = opts.embedFont
@@ -136,4 +136,17 @@ export function renderFrame(
 export function renderSvg(hl: Highlighted, cfg: CodeConfig): string {
   const geo = computeGeometry(hl.lines, cfg);
   return renderFrame(hl.lines, hl, cfg, geo, { embedFont: true });
+}
+
+/** A tiny self-contained SVG used as a fallback when rendering fails, so an
+ *  embedded `<img>` shows a clear message instead of a broken-image icon. */
+export function errorSvg(message: string): string {
+  const text = escapeXml(message);
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" width="360" height="64" viewBox="0 0 360 64" role="img" aria-label="error">` +
+    `<rect width="360" height="64" rx="8" fill="#1e1e1e"/>` +
+    `<text x="20" y="32" dominant-baseline="central" fill="#f97583" ` +
+    `font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="13">codemo: ${text}</text>` +
+    `</svg>`
+  );
 }
