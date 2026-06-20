@@ -1,6 +1,7 @@
 import { LIMITS } from './config';
 import { getThemeColors, tokenizeLine } from './highlight';
 import type { Highlighted, Tok } from './types';
+import { sliceToCols } from './width';
 
 /** Color used for the shell prompt prefix on command lines. */
 const PROMPT_COLOR = '#3fb950';
@@ -24,7 +25,7 @@ export async function terminalize(
   const rawLines = code
     .split('\n')
     .slice(0, LIMITS.maxLines)
-    .map((l) => [...l].slice(0, LIMITS.maxCols).join(''));
+    .map((l) => sliceToCols(l, LIMITS.maxCols).text);
 
   const lines: Tok[][] = await Promise.all(
     rawLines.map(async (line, r): Promise<Tok[]> => {

@@ -1,4 +1,5 @@
 import type { CodeConfig, Highlighted, Tok } from '../types';
+import { sliceToCols, strCols } from '../width';
 
 export interface Frame {
   lines: Tok[][];
@@ -11,31 +12,32 @@ const FRAME_CAP = 80;
 /** Max frames spent typing a single command line (terminal anim). */
 const CMD_FRAME_CAP = 24;
 
+/** Display-column width of a tokenized line (wide CJK glyphs count as 2). */
 function lineCols(line: Tok[]): number {
   let n = 0;
-  for (const t of line) n += [...t.content].length;
+  for (const t of line) n += strCols(t.content);
   return n;
 }
 
-/** Slice a tokenized line down to its first `k` visible characters. */
-function sliceLine(line: Tok[], k: number): Tok[] {
-  if (k <= 0) return [];
+/** Slice a tokenized line down to its first `maxCols` display columns. A wide
+ *  glyph that wouldn't fully fit is dropped (never rendered half), so the
+ *  revealed width can be one column short of `maxCols`. */
+function sliceLine(line: Tok[], maxCols: number): Tok[] {
+  if (maxCols <= 0) return [];
   const out: Tok[] = [];
-  let count = 0;
+  let cols = 0;
   for (const t of line) {
-    const chars = [...t.content];
-    if (count + chars.length <= k) {
-      out.push(t);
-      count += chars.length;
-    } else {
-      out.push({ ...t, content: chars.slice(0, k - count).join('') });
-      break;
-    }
+    const room = maxCols - cols;
+    if (room <= 0) break;
+    const { text, cols: tcols } = sliceToCols(t.content, room);
+    if (text) out.push(text.length === t.content.length ? t : { ...t, content: text });
+    cols += tcols;
+    if (text.length < t.content.length) break; // truncated mid-token → stop
   }
   return out;
 }
 
-/** Reveal the first `n` characters of the document (newlines count as 1 char). */
+/** Reveal the first `n` display columns of the document (newlines count as 1). */
 function sliceLines(lines: Tok[][], n: number): { lines: Tok[][]; cursor: { row: number; col: number } } {
   const out: Tok[][] = [];
   let remaining = n;
@@ -59,9 +61,10 @@ function sliceLines(lines: Tok[][], n: number): { lines: Tok[][]; cursor: { row:
         }
       }
     } else {
-      out.push(sliceLine(lines[r], remaining));
+      const sliced = sliceLine(lines[r], remaining);
+      out.push(sliced);
       cursorRow = r;
-      cursorCol = remaining;
+      cursorCol = lineCols(sliced); // actual revealed columns (≤ remaining)
       break;
     }
   }
@@ -81,7 +84,7 @@ export function buildFrames(hl: Highlighted, cfg: CodeConfig): Frame[] {
   if (cfg.anim === 'none' || lines.length === 0) return [fullFrame];
 
   const frameMs = Math.round(1000 / cfg.fps);
-  const totalChars = lines.reduce((s, l) => s + lineCols(l), 0) + Math.max(0, lines.length - 1);
+  const totalCols = lines.reduce((s, l) => s + lineCols(l), 0) + Math.max(0, lines.length - 1);
 
   const withHolds = (frames: Frame[]): Frame[] => {
     if (frames.length === 0) return [fullFrame];
@@ -92,14 +95,14 @@ export function buildFrames(hl: Highlighted, cfg: CodeConfig): Frame[] {
 
   if (cfg.anim === 'typing') {
     let step = Math.max(1, Math.round(cfg.speed / cfg.fps));
-    if (Math.ceil(totalChars / step) > FRAME_CAP) step = Math.ceil(totalChars / FRAME_CAP);
+    if (Math.ceil(totalCols / step) > FRAME_CAP) step = Math.ceil(totalCols / FRAME_CAP);
 
     const frames: Frame[] = [];
-    for (let n = 0; n < totalChars; n += step) {
+    for (let n = 0; n < totalCols; n += step) {
       const { lines: vis, cursor } = sliceLines(lines, n);
       frames.push({ lines: vis, cursor: cfg.cursor ? cursor : null, delayMs: frameMs });
     }
-    const final = sliceLines(lines, totalChars);
+    const final = sliceLines(lines, totalCols);
     frames.push({ lines: final.lines, cursor: cfg.cursor ? final.cursor : null, delayMs: frameMs });
     return withHolds(frames);
   }
@@ -127,9 +130,10 @@ export function buildFrames(hl: Highlighted, cfg: CodeConfig): Frame[] {
       const cols = lineCols(lines[r]);
       const step = Math.max(baseStep, Math.ceil(cols / CMD_FRAME_CAP));
       for (let c = 0; c < cols; c += step) {
+        const sliced = sliceLine(lines[r], c);
         frames.push({
-          lines: [...prev, sliceLine(lines[r], c)],
-          cursor: cfg.cursor ? { row: r, col: c } : null,
+          lines: [...prev, sliced],
+          cursor: cfg.cursor ? { row: r, col: lineCols(sliced) } : null,
           delayMs: frameMs,
         });
       }

@@ -1,4 +1,5 @@
 import type { CodeConfig, Tok } from '../types';
+import { strCols } from '../width';
 import { CHAR_ADVANCE } from './font';
 
 export interface Geometry {
@@ -19,7 +20,7 @@ export interface Geometry {
 
 function lineCols(line: Tok[]): number {
   let n = 0;
-  for (const t of line) n += [...t.content].length;
+  for (const t of line) n += strCols(t.content);
   return n;
 }
 

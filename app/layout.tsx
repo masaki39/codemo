@@ -5,14 +5,14 @@ const DESCRIPTION =
   'Syntax-highlighted code blocks as SVG and animated GIF, for embedding in Markdown and HTML slides.';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://codemo-lake.vercel.app'),
+  metadataBase: new URL('https://codemo.masaki39.net'),
   title: 'codemo',
   description: DESCRIPTION,
   keywords: ['code', 'syntax highlighting', 'svg', 'gif', 'markdown', 'slides', 'shiki'],
   openGraph: {
     title: 'codemo',
     description: DESCRIPTION,
-    url: 'https://codemo-lake.vercel.app',
+    url: 'https://codemo.masaki39.net',
     siteName: 'codemo',
     type: 'website',
   },

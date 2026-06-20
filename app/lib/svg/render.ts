@@ -1,8 +1,6 @@
 import type { CodeConfig, Highlighted, Tok } from '../types';
-import { FONT_FAMILY, fontStyleBlock } from './font';
+import { FONT_STACK, fontStyleBlock } from './font';
 import { computeGeometry, type Geometry } from './geometry';
-
-const FONT_STACK = `'${FONT_FAMILY}',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace`;
 
 export function escapeXml(str: string): string {
   return str

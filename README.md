@@ -8,25 +8,25 @@ Powered by [Shiki](https://shiki.style) (VS Code grammars & themes), rendered to
 
 Static code block (SVG):
 
-![demo](https://codemo-lake.vercel.app/api/code?code=const%20greet%20%3D%20(name)%20%3D%3E%20%60Hello%2C%20%24%7Bname%7D!%60%3B&lang=javascript&theme=dracula&title=greet.js)
+![demo](https://codemo.masaki39.net/api/code?code=const%20greet%20%3D%20(name)%20%3D%3E%20%60Hello%2C%20%24%7Bname%7D!%60%3B&lang=javascript&theme=dracula&title=greet.js)
 
 Typing animation (GIF):
 
-![typing](https://codemo-lake.vercel.app/api/code/gif?code=const%20greet%20%3D%20(name)%20%3D%3E%20%60Hello%2C%20%24%7Bname%7D!%60%3B&lang=javascript&theme=dracula&anim=typing&title=greet.js)
+![typing](https://codemo.masaki39.net/api/code/gif?code=const%20greet%20%3D%20(name)%20%3D%3E%20%60Hello%2C%20%24%7Bname%7D!%60%3B&lang=javascript&theme=dracula&anim=typing&title=greet.js)
 
 Terminal session (GIF):
 
-![terminal](https://codemo-lake.vercel.app/api/code/gif?code=%24%20npm%20install%20codemo%0Aadded%201%20package%20in%200.4s&mode=terminal&anim=terminal&theme=tokyo-night&title=zsh)
+![terminal](https://codemo.masaki39.net/api/code/gif?code=%24%20npm%20install%20codemo%0Aadded%201%20package%20in%200.4s&mode=terminal&anim=terminal&theme=tokyo-night&title=zsh)
 
-> Try it interactively in the **[playground](https://codemo-lake.vercel.app)**.
+> Try it interactively in the **[playground](https://codemo.masaki39.net)**.
 
 ## Usage
 
 Embed in Markdown:
 
 ```markdown
-![code](https://codemo-lake.vercel.app/api/code?code=const%20x%20%3D%201&lang=ts&theme=dracula)
-![code](https://codemo-lake.vercel.app/api/code/gif?code=const%20x%20%3D%201&lang=ts&anim=typing)
+![code](https://codemo.masaki39.net/api/code?code=const%20x%20%3D%201&lang=ts&theme=dracula)
+![code](https://codemo.masaki39.net/api/code/gif?code=const%20x%20%3D%201&lang=ts&anim=typing)
 ```
 
 Endpoints:
@@ -47,7 +47,7 @@ URLs have length limits and code contains characters that need escaping. For any
 ```js
 import LZString from 'lz-string';
 const lz = LZString.compressToEncodedURIComponent(sourceCode);
-const url = `https://codemo-lake.vercel.app/api/code?lz=${lz}&lang=typescript&theme=nord`;
+const url = `https://codemo.masaki39.net/api/code?lz=${lz}&lang=typescript&theme=nord`;
 ```
 
 The playground does this for you and gives you a ready-to-paste Markdown snippet.
@@ -102,6 +102,14 @@ The playground does this for you and gives you a ready-to-paste Markdown snippet
 
 `javascript` (`js`), `typescript` (`ts`), `tsx`, `jsx`, `json`, `python` (`py`), `rust`, `go`, `bash` (`sh`/`shell`/`zsh`/`console`), `powershell` (`ps`/`ps1`), `docker` (`dockerfile`), `html`, `css`, `markdown`, `yaml` (`yml`), `toml`, `ini`, `xml`, `sql`, `graphql`, `c`, `cpp` (`c++`), `csharp` (`cs`/`c#`), `java`, `kotlin` (`kt`), `swift`, `scala`, `ruby` (`rb`), `php`, `lua`, `dart`, `r`, `elixir`, `vue`, `svelte`, `diff`, `text` (plain)
 
+## Fonts & CJK
+
+Text is rendered with **[UDEV Gothic](https://github.com/yuru7/udev-gothic)** — a hybrid of JetBrains Mono (Latin) and BIZ UDGothic (Japanese), bundled under the SIL Open Font License 1.1 (see `assets/fonts/LICENSE-UDEVGothic`). Full-width CJK characters (Japanese, Chinese, Korean, full-width punctuation) are measured as two columns and sit exactly on the monospace grid, so Japanese comments, strings and terminal output render correctly with no clipping or cursor drift.
+
+- **GIF** embeds the full font, so CJK always renders.
+- **SVG** inlines only a small Latin subset to stay tiny; CJK falls back to the viewer's system font (Hiragino / Yu Gothic / Noto Sans CJK …), which every Japanese OS ships.
+- **Emoji** aren't supported (no color-glyph rendering) and may show as missing glyphs.
+
 ## Develop locally
 
 ```sh
@@ -120,7 +128,7 @@ pnpm install -g vercel   # or: npx vercel
 vercel deploy --prod
 ```
 
-When self-hosting, replace `codemo-lake.vercel.app` in the examples with your own deployment URL. The playground builds embed URLs from `window.location.origin`, so it works on any domain automatically.
+When self-hosting, replace `codemo.masaki39.net` in the examples with your own deployment URL. The playground builds embed URLs from `window.location.origin`, so it works on any domain automatically.
 
 ## License
 

@@ -7,6 +7,7 @@ import {
 import { LIMITS } from './config';
 import { DEFAULT_THEME, LANGS, THEMES } from './themes';
 import type { Highlighted, Tok } from './types';
+import { sliceToCols, strCols } from './width';
 
 // FontStyle bit flags (from shiki's FontStyle enum).
 const ITALIC = 1;
@@ -25,20 +26,20 @@ function getHighlighter(): Promise<Highlighter> {
   return highlighterPromise;
 }
 
-/** Truncate a tokenized line so it never exceeds `maxCols` columns. */
+/** Truncate a tokenized line so it never exceeds `maxCols` display columns. */
 function clampLine(line: Tok[], maxCols: number): Tok[] {
   const out: Tok[] = [];
   let cols = 0;
   for (const tok of line) {
     if (cols >= maxCols) break;
-    const len = [...tok.content].length;
+    const len = strCols(tok.content);
     if (cols + len <= maxCols) {
       out.push(tok);
       cols += len;
     } else {
-      const room = maxCols - cols;
-      out.push({ ...tok, content: [...tok.content].slice(0, room).join('') });
-      cols = maxCols;
+      const { text } = sliceToCols(tok.content, maxCols - cols);
+      if (text) out.push({ ...tok, content: text });
+      break;
     }
   }
   return out;
